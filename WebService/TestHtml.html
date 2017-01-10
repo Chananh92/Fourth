@@ -1,0 +1,91 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Your ASP.NET application</title>
+    <link href="//cdn.datatables.net/1.10.7/css/jquery.dataTables.min.css" rel="stylesheet" />
+</head>
+<body>
+    <div id="content">
+        <button data-bind="click: sendFirstRequest"> Press me!</button>
+        <table id="employeesGrid" class="display">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>SurName</th>
+                    <th>Role</th>
+                    <th>Email</th>
+                    <th>Age</th>
+                    <th>Teams</th>
+                    <th>When</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+
+    <script src="http://edge.quantserve.com/quant.js"></script>
+    <script src="/Scripts/jquery-1.10.2.min.js"></script>
+    <script src="//cdn.datatables.net/1.10.7/js/jquery.dataTables.min.js"></script>
+    <script src="/Scripts/knockout-3.3.0.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            var t = $('#employeesGrid').DataTable();
+            function ViewModel() {
+                var self = this;
+
+                this.token = ko.observable();
+                this.sendFirstRequest = function () {
+                    $.ajax({
+                        url: "/api/clients/subscribe?date=2017-09-01&callback=http%3A%2F%2Flocalhost%3A51396%2Fapi%2Fclients%2Fsaveemployeesinfo%2F",
+                        type: "GET",
+                        beforeSend: function (xhr) { xhr.setRequestHeader('Accept-Client', 'Fourth-Monitor'); },
+                        success: function (data) {
+                            self.token(data.Token);
+                        }
+                    }).success(function () {
+                        self.getData();
+                    }).fail(function (jqXHR, textStatus, errorThrown) {
+                        console.error('Error when trying to get data!')
+                    });
+                }
+
+                this.getData = function () {
+                    $.ajax({
+                        url: "/api/clients/getemployeesinfo",
+                        type: "GET",
+                        beforeSend: function (xhr) { xhr.setRequestHeader('X-Fourth-Token', self.token()); },
+                        success: function (data) {
+                            $.each(data, function (i,item) {
+                                t.row.add([
+                                   item.Name,
+                                   item.SurName,
+                                   item.Role,
+                                   item.Email,
+                                   item.Age,
+                                   item.Teams.toString(),
+                                   item.When.toString()
+                                ]).draw();
+                            });
+                        }
+                    }).fail(function (jqXHR, textStatus, errorThrown) {
+                        if (jqXHR.status = 404) {
+                            setTimeout(function () {
+                                self.getData();
+                            }, 3000)
+                        }
+                    });
+                }
+
+                this.render = function () {
+                    ko.applyBindings(self, document.getElementById("content"));
+                };
+
+            };
+
+            // ready
+            var model = new ViewModel();
+            model.render();
+        });
+    </script>
+</body>
+</html>

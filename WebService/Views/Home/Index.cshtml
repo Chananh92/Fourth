@@ -1,0 +1,69 @@
+﻿<div id="content">
+    <button data-bind="click: sendFirstRequest"> press me!</button>
+    <table id="employeesGrid" class="display" width="100%"></table>
+</div>
+<script type="text/javascript">
+    (function ($$, app) {
+        var t = $('#employeesGrid').DataTable({
+            data: self.data(),
+            columns: [
+                { title: "Name" },
+                { title: "SurName" },
+                { title: "Email" },
+                { title: "Age" },
+                { title: "Role" },
+                { title: "ManagerId" }
+            ]
+        });
+        function ViewModel() {
+            var self = this;
+
+            this.data = ko.observableArray();
+            this.token = ko.observable();
+            this.sendFirstRequest = function () {
+                $.get("/api/clients/subscribe?date=2017-09-01&callback=http%3A%2F%2Flocalhost%3A51396%2Fapi%2Fclients%2Fsaveemployeesinfo%2F", function (data, status) {
+                    console.log(data);
+                    self.token(data.Token);
+                })
+				.success(function () {
+				    self.getData();
+				}).fail(function (jqXHR, textStatus, errorThrown) {
+				    console.err('Error when trying to get token!')
+				});
+            }
+
+            this.getData = function () {
+                $.ajax({
+                    url: "sss",
+                    type: "GET",
+                    beforeSend: function (xhr) { xhr.setRequestHeader('X-Test-Header', 'test-value'); },
+                    success: function (data) {
+                        $.each(data, function (v) {
+                            //TODO: change properties
+                            self.data.push(v);
+                            t.row.add([
+                               data.aaaa,
+                               data.aaaa,
+                               data.aaaa,
+                               data.aaaa,
+                               data.aaaa
+                            ]).draw(false);
+                        });
+                    }
+                }).fail(function (jqXHR, textStatus, errorThrown) {
+                    console.err('Error when trying to get data!')
+                });
+            }
+
+            this.render = function () {
+                ko.applyBindings(self, document.getElementById("content"));
+            };
+
+        };
+
+        // ready
+        var model = new ViewModel();
+        model.render();
+
+    })(jQuery, window.mb);
+</script>
